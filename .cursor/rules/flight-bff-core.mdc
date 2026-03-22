@@ -1,0 +1,12 @@
+---
+description: Flight BFF core architecture, errors, and boundaries
+alwaysApply: true
+---
+
+# Flight BFF — core
+
+- **Stack**: FastAPI + Pydantic v2 + `httpx` async. Upstream is **only** reachable via `LegacyClient` (`app/legacy/client.py`), not raw `httpx` in routes.
+- **Public API**: Paths under **`/v1`**, lowercase segments, query `simulate_issues` forwarded to legacy when present (same pattern as existing routes).
+- **Errors**: Never return legacy error JSON raw to clients. Raise `AppError` or rely on handlers so the body is always `{ "error": { "code", "message", "details", "request_id" } }` (see `app/core/errors.py`).
+- **Layers**: Routers (`app/api/routes/`) → services/transforms (`app/services/`) → `LegacyClient` → upstream. **No business transform logic** inside `LegacyClient` (only HTTP, retry, circuit breaker).
+- **Config**: New tunables go in `app/config.py` + env vars + README env table; defaults must be safe for local + Render (`PORT` is external).

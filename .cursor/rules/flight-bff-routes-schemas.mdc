@@ -1,0 +1,13 @@
+---
+description: Conventions for new FastAPI routes and Pydantic schemas in this BFF
+globs: app/api/**/*.py,app/schemas/**/*.py
+alwaysApply: false
+---
+
+# Routes & schemas
+
+- **Dependencies**: Use `Annotated[..., Depends(...)]` patterns from `app/api/deps.py` (`LegacyDep`, `AirportIndexDep`, `SettingsDep`). Do not instantiate `LegacyClient` inside route bodies.
+- **OpenAPI**: Set meaningful `tags=[...]`, `response_model=...` where the contract is stable; use `Field(..., description=...)` on public body/query params.
+- **Legacy alignment**: Request bodies that mirror upstream field names go **only** in the service layer when building the dict passed to `LegacyClient`; public Pydantic models stay **frontend-friendly** (flat names, validation).
+- **Flags**: Expose `simulate_issues: bool = Query(False, ...)` on endpoints that call legacy, and pass it through to `LegacyClient` methods.
+- **404/empty**: Prefer `AppError` with explicit `http_status` (e.g. `OFFER_NOT_FOUND`, 404) after transform returns empty — avoid silent `{}` for missing resources.

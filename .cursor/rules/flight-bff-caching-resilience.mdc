@@ -1,0 +1,16 @@
+---
+description: When and how to add caching, retries, and circuit breaker usage
+globs: app/services/**/*.py,app/legacy/**/*.py,app/main.py
+alwaysApply: false
+---
+
+# Caching & resilience
+
+- **Caching rules**
+  - **Cache**: Reference data that rarely changes (airports, static catalogs) or **read-heavy GET** where stale data is acceptable (e.g. booking summary TTL).
+  - **Do not cache**: Search results, offer/pricing, anything security-sensitive or must-be-fresh unless the brief explicitly allows it.
+  - **Where**: Prefer `cachetools.TTLCache` on `app.state` (per-process) or a dedicated index class (see `AirportIndex`). Document TTL via `Settings` + env var.
+  - **Keys**: Include dimensions that change behavior (e.g. `simulate_issues`) so test mode does not poison production cache entries.
+  - **Invalidation**: Prefer TTL + explicit overwrite on write paths (e.g. after `POST` booking, refresh cache entry for that ref).
+
+- **Resilience**: New upstream calls go through `LegacyClient._request` — do not bypass retries. Do not catch `AppError` in routes unless converting to a different code; let the global handler respond.
