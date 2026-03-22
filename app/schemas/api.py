@@ -136,3 +136,13 @@ class BookingConfirmation(BaseModel):
     contact: dict[str, str | None]
     ticketing: dict[str, Any]
     created_at: str | None = None
+
+
+class ReferenceLabelsResponse(BaseModel):
+    """Static code → human-readable labels from BFF config (no legacy call)."""
+
+    airlines: dict[str, str] = Field(..., description="IATA-style carrier code → airline name")
+    cabins: dict[str, str] = Field(..., description="Cabin class code → cabin name")
+    aircraft: dict[str, str] = Field(..., description="Equipment / type code → aircraft description")
+    tax_codes: dict[str, str] = Field(..., description="Tax/fee code → short description")
+    passenger_types: dict[str, str] = Field(..., description="Passenger type code → label (e.g. ADT → Adult)")

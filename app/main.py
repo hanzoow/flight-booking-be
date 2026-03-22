@@ -8,7 +8,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from app.api.routes import airports, bookings, flights, health, offers
+from app.api.routes import airports, bookings, flights, health, offers, reference
 from app.config import get_settings
 from app.core.errors import AppError, app_error_handler, error_body
 from app.legacy.circuit import CircuitBreaker
@@ -68,6 +68,7 @@ def create_app() -> FastAPI:
     app.include_router(offers.router, prefix="/v1")
     app.include_router(bookings.router, prefix="/v1")
     app.include_router(airports.router, prefix="/v1")
+    app.include_router(reference.router, prefix="/v1")
 
     return app
 

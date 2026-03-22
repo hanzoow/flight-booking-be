@@ -42,21 +42,22 @@ TAX_CODES: dict[str, str] = {
     "D8": "Discount / adjustment",
 }
 
+AIRCRAFT_TYPES: dict[str, str] = {
+    "738": "Boeing 737-800",
+    "739": "Boeing 737-900",
+    "320": "Airbus A320",
+    "321": "Airbus A321",
+    "333": "Airbus A330-300",
+    "359": "Airbus A350-900",
+    "388": "Airbus A380",
+    "77W": "Boeing 777-300ER",
+}
+
 
 def aircraft_label(code: str | None) -> str | None:
     if not code:
         return None
-    mapping = {
-        "738": "Boeing 737-800",
-        "739": "Boeing 737-900",
-        "320": "Airbus A320",
-        "321": "Airbus A321",
-        "333": "Airbus A330-300",
-        "359": "Airbus A350-900",
-        "388": "Airbus A380",
-        "77W": "Boeing 777-300ER",
-    }
-    return mapping.get(code.upper(), f"Aircraft {code}")
+    return AIRCRAFT_TYPES.get(code.upper(), f"Aircraft {code}")
 
 
 def payment_method_label(code: str) -> str:

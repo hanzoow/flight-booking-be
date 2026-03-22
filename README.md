@@ -53,7 +53,8 @@ This section answers the brief: API design, architecture, resilience, caching, A
 
 **URL and schema philosophy**
 
-- All wrapper routes live under `**/v1`** with **lowercase, plural nouns** where it reads naturally: `flights`, `bookings`, `airports`.
+- All wrapper routes live under `**/v1`** with **lowercase, plural nouns** where it reads naturally: `flights`, `bookings`, `airports`, `reference`.
+- **`GET /v1/reference/labels`** exposes static **code → label** maps (airlines, cabins, aircraft, tax codes, passenger types) from `app/core/labels.py`. It **does not call legacy**; responses use long **`Cache-Control`** so browsers/CDNs can cache and search payloads can stay smaller.
 - **Query parameters** carry cross-cutting concerns: `page`, `page_size`, `simulate_issues` (forwarded to legacy as `?simulate_issues=true` when true).
 - **Request bodies** use **flat, explicit fields** (e.g. `origin`, `destination`, `departure_date`) instead of mirroring legacy nesting.
 - **Responses** are **flattened and labeled** for UI work: e.g. `OfferSummary` with `legs[]`, `airline_name`, ISO-like times, single money shape — not the legacy tree under `data.flight_results...`.
@@ -140,10 +141,10 @@ flowchart LR
 | -------------------- | ------------------------------------------------------------------------------------ |
 | `app/main.py`        | FastAPI app, lifespan, middleware (`X-Request-Id`), exception handlers, router mount |
 | `app/config.py`      | `pydantic-settings` — timeouts, retries, TTLs, `LEGACY_BASE_URL`                     |
-| `app/api/routes/`    | HTTP endpoints: `flights`, `offers`, `bookings`, `airports`, `health`                |
+| `app/api/routes/`    | HTTP endpoints: `flights`, `offers`, `bookings`, `airports`, `reference`, `health`   |
 | `app/api/deps.py`    | `Depends` wiring for settings, client, airport index                                 |
 | `app/schemas/api.py` | Public request/response models                                                       |
-| `app/services/`      | Transforms + `airports.py` enrichment/cache                                          |
+| `app/services/`      | Transforms + `airports.py` enrichment/cache + `reference_labels.py` (static maps)     |
 | `app/legacy/`        | `client.py` (httpx), `circuit.py` (breaker)                                          |
 | `app/core/`          | `errors.py`, `dates.py`, `labels.py`                                                 |
 
@@ -175,6 +176,7 @@ Implementation: `app/legacy/client.py` (retry loop), `app/legacy/circuit.py` (br
 | **Enriched airport list** (codes + city + coords) | `TTLCache` inside `AirportIndex`        | `AIRPORT_CACHE_TTL_SECONDS` (3600s) | Time-based expiry; separate cache entry when `simulate_issues` differs so test mode does not poison normal cache.     |
 | **Booking snapshot** by reference                 | `TTLCache` on `app.state.booking_cache` | `BOOKING_CACHE_TTL_SECONDS` (60s)   | Time-based expiry; **overwrite** when the same reference is returned again from `POST /v1/bookings` or a fresh `GET`. |
 | **Search results, offers, prices**                | Not cached                              | —                                   | Always live from legacy when requested.                                                                               |
+| **Reference label maps** (`GET /v1/reference/labels`) | HTTP `Cache-Control` on the response | `max-age=86400` (+ `stale-while-revalidate`) | Client/CDN revalidate; update `app/core/labels.py` and redeploy to change data.                                        |
 
 
 `GET /v1/bookings/{ref}` returns header `**X-Cache: HIT`** or `**MISS**` for transparency.
@@ -290,9 +292,9 @@ app/
 ├── config.py               # Settings / env (timeouts, TTLs, LEGACY_BASE_URL)
 ├── api/
 │   ├── deps.py             # Depends(get_legacy_client), settings, airport index
-│   └── routes/             # HTTP: flights, offers, bookings, airports, health
+│   └── routes/             # HTTP: flights, offers, bookings, airports, reference, health
 ├── schemas/api.py          # Public Pydantic contracts (wrapper-facing)
-├── services/               # Transforms + AirportIndex (enrich + TTL cache)
+├── services/               # Transforms + AirportIndex + reference_labels (static maps)
 ├── legacy/
 │   ├── client.py           # httpx, retry/backoff, circuit breaker, simulate_issues
 │   └── circuit.py
