@@ -4,6 +4,32 @@ Backend-for-Frontend (BFF) over the legacy mock GDS at [mock-travel-api](https:/
 
 ---
 
+## AI approach
+
+Document your **actual** process when submitting; below is a **template** that matches how this codebase was built.
+
+| Area | Example |
+|------|---------|
+| **Tools** | Cursor + Chat/Composer; optional: Copilot, CLI `curl`, legacy `/openapi.json`. |
+| **Tasks accelerated** | Parsing the take-home doc; generating folder layout; drafting `LegacyClient` and Pydantic models; initial nested search → flat `OfferSummary` mapping from sample JSON. |
+| **Prompts that worked** | “Given this sample `flightsearch` JSON, write a function that returns a list of flat offers with airline name, ISO departure, total price, stops.” / “Normalize these four legacy error JSON shapes into one `(code, message)`.” |
+| **Where human intervention was required** | FastAPI **`Annotated[..., Depends(...)]`** must wrap callables with `Depends()`; reordering **circuit breaker** vs **4xx** so client errors do not skew breaker counts; verifying **date** edge cases (epoch, `YYYYMMDDHHMMSS`, `DD-Mon-YYYY`) against real responses; smoke tests with **`uvicorn` + `curl`** and Render **`PORT`**. |
+
+**Replace the table above** with your real prompts, screenshots, or commit timeline before final submission.
+
+### Cursor Rules & Skills (repeatable workflow)
+
+This repo ships **project-scoped** guidance so new endpoints stay consistent (errors, layers, caching, OpenAPI).
+
+| Artifact | Path | Purpose |
+|----------|------|---------|
+| **Rules** (always-on + file-scoped) | `.cursor/rules/*.mdc` | Enforce boundaries: `LegacyClient` only for HTTP, unified `AppError` shape, `/v1` conventions, when to use TTL cache. |
+| **Skill** (workflow) | `.cursor/skills/flight-bff-extend-api/SKILL.md` | Step-by-step checklist for “new legacy call → client method → transform → route → optional cache → verify”. |
+
+**How to demo:** In Cursor, mention *“apply the flight BFF skill”* or *“follow `.cursor` rules”* when asking for a new endpoint; enable **Project Rules** so `flight-bff-core` (always apply) and globs for `app/api`, `app/services`, and `app/legacy` activate while editing those files.
+
+---
+
 ## Setup (run locally)
 
 1. **Clone** the repository and `cd` into the project root.
@@ -25,9 +51,10 @@ Backend-for-Frontend (BFF) over the legacy mock GDS at [mock-travel-api](https:/
    ```bash
    uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
    ```
+
 5. **Verify**:
-  - Health: [http://localhost:8000/health](http://localhost:8000/health) → `{"status":"ok"}`
-  - Swagger: [http://localhost:8000/docs](http://localhost:8000/docs)
+   - Health: [http://localhost:8000/health](http://localhost:8000/health) → `{"status":"ok"}`
+   - Swagger: [http://localhost:8000/docs](http://localhost:8000/docs)
 
 Optional: export variables in your shell or configure them on your host (see **Environment variables** in the Documentation section).
 
@@ -35,7 +62,7 @@ Optional: export variables in your shell or configure them on your host (see **E
 
 ## Documentation
 
-This section answers the brief: API design, architecture, resilience, caching, AI workflow, and setup.
+This section covers **API design, architecture, resilience, caching, and environment variables** from the take-home brief. **AI approach** (tools, prompts, validation habits, Cursor rules/skills) is **[above](#ai-approach)**.
 
 ### 1. API design decisions
 
@@ -183,24 +210,7 @@ Implementation: `app/legacy/client.py` (retry loop), `app/legacy/circuit.py` (br
 
 ---
 
-### 5. AI workflow
-
-Document your **actual** process when submitting; below is a **template** that matches how this codebase was built.
-
-
-| Area                                      | Example                                                                                                                                                                                                                                                                                                                               |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Tools**                                 | Cursor + Chat/Composer; optional: Copilot, CLI `curl`, legacy `/openapi.json`.                                                                                                                                                                                                                                                        |
-| **Tasks accelerated**                     | Parsing the take-home doc; generating folder layout; drafting `LegacyClient` and Pydantic models; initial nested search → flat `OfferSummary` mapping from sample JSON.                                                                                                                                                               |
-| **Prompts that worked**                   | “Given this sample `flightsearch` JSON, write a function that returns a list of flat offers with airline name, ISO departure, total price, stops.” / “Normalize these four legacy error JSON shapes into one `(code, message)`.”                                                                                                      |
-| **Where human intervention was required** | FastAPI `**Annotated[..., Depends(...)]`** must wrap callables with `Depends()`; reordering **circuit breaker** vs **4xx** so client errors do not skew breaker counts; verifying **date** edge cases (epoch, `YYYYMMDDHHMMSS`, `DD-Mon-YYYY`) against real responses; smoke tests with `**uvicorn` + `curl`** and Render `**PORT**`. |
-
-
-**Replace this subsection** with your real prompts, screenshots, or commit timeline before final submission.
-
----
-
-### 6. Environment variables
+### 5. Environment variables
 
 
 | Variable                    | Default                              | Description                     |
@@ -268,19 +278,6 @@ The part after `#` can vary slightly by FastAPI / Swagger UI version; opening `/
 #### Free tier
 
 Instances **sleep** when idle; the first request after sleep may take **~30–60 seconds** while the service wakes. If the build fails on Python version, align **PYTHON_VERSION** / `runtime.txt` with a [supported Render runtime](https://render.com/docs/native-runtimes#python).
-
----
-
-## Cursor: Rules & Skills (repeatable AI workflow)
-
-This repo ships **project-scoped** guidance so new endpoints stay consistent (errors, layers, caching, OpenAPI).
-
-| Artifact | Path | Purpose |
-|----------|------|---------|
-| **Rules** (always-on + file-scoped) | `.cursor/rules/*.mdc` | Enforce boundaries: `LegacyClient` only for HTTP, unified `AppError` shape, `/v1` conventions, when to use TTL cache. |
-| **Skill** (workflow) | `.cursor/skills/flight-bff-extend-api/SKILL.md` | Step-by-step checklist for “new legacy call → client method → transform → route → optional cache → verify”. |
-
-**How to demo:** In Cursor, mention *“apply the flight BFF skill”* or *“follow .cursor rules”* when asking for a new endpoint; enable **Project Rules** so `flight-bff-core` (always apply) and globs for `app/api`, `app/services`, and `app/legacy` activate while editing those files.
 
 ---
 

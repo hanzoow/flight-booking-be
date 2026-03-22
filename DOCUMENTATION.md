@@ -1,8 +1,8 @@
 # Flight BFF — supplementary notes
 
-The **primary assessment write-up** (API design, architecture, resilience, caching, AI workflow, and local setup) is in **[README.md](README.md)** under **Documentation (take-home deliverable)**. Keep that section accurate for submission.
+The **primary assessment write-up** (API design, architecture, resilience, caching, and local setup) is in **[README.md](README.md)** under **Documentation**. **AI workflow**, tools, prompts, and **Cursor Rules & Skills** are at the top of README under **AI approach**. Keep those sections accurate for submission.
 
-**Cursor:** Project **Rules** live in `.cursor/rules/*.mdc`; the **Skill** `flight-bff-extend-api` lives under `.cursor/skills/`. See README → **Cursor: Rules & Skills**.
+**Cursor:** Project **Rules** live in `.cursor/rules/*.mdc`; the **Skill** `flight-bff-extend-api` lives under `.cursor/skills/` (see README **AI approach**).
 
 This file only holds **optional extras** you can expand if the brief asks for more depth without bloating the README.
 
